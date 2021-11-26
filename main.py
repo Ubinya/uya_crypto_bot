@@ -5,14 +5,13 @@ import requests
 from pprint import pprint
 import time
 import logging
-# import backtrader as bt
 import numpy as np
 from binance.spot import Spot as Client
 from decimal import Decimal
 import json
-from binance.lib.utils import config_logging
 from binance.error import ClientError
 from key import *
+from utils import *
 
 
 log_format = '%(asctime)s %(message)s'
@@ -26,14 +25,7 @@ logging.getLogger().addHandler(fh)
 def _get_server_time():
     return int(time.time())
 
-def round_to(value: float, target: float) -> float:
-    """
-    Round price to price tick value.
-    """
-    value = Decimal(str(value))
-    target = Decimal(str(target))
-    rounded = float(int(round(value / target)) * target)
-    return rounded
+
 
 class BotManager(object):
     def __init__(self):
@@ -42,7 +34,7 @@ class BotManager(object):
         self.client = Client(key, secret, base_url=url)
 
     def add_bot(self, symbol, price_mode, price_diff, max_order, fund_each):
-        botit = GridTrading(self.client, symbol, price_mode, price_diff,max_order, fund_each)
+        botit = grid_bot(self.client, symbol, price_mode, price_diff,max_order, fund_each)
         self.bot_list.append(botit)
 
     def run_init(self):
@@ -61,7 +53,7 @@ class BotManager(object):
 
 
 
-class GridTrading(object):
+class grid_bot(object):
     def __init__(self, client, symbol, price_mode, price_diff,max_order, fund_each=-1):
         self.client = client
         self.txn_count = 0
@@ -109,16 +101,7 @@ class GridTrading(object):
 
         return bid_price, ask_price
 
-    def order_str(self, symbol, side, type, timeInForce, quantity, price):
-        params = {
-            "symbol": symbol,
-            "side": side,
-            "type": type,
-            "timeInForce": timeInForce,
-            "quantity": quantity,
-            "price": price,
-        }
-        return params
+
 
 
     def do_a_loop(self):
@@ -175,7 +158,7 @@ class GridTrading(object):
                         # 防止价格
                         sell_price = ask_price
 
-                    params = self.order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                    params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                             quantity=round_to((self.fund_each / sell_price), self.qty_unit),
                                             price=round_to(sell_price, self.price_unit))
 
@@ -199,7 +182,7 @@ class GridTrading(object):
                         if buy_price > bid_price > 0:
                             buy_price = bid_price
 
-                        params = self.order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                        params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                            quantity=round_to((self.fund_each / buy_price), self.qty_unit),
                                            price=round_to(buy_price, self.price_unit))
                         new_buy_order_id = self.client.new_order(**params)
@@ -241,7 +224,7 @@ class GridTrading(object):
                     if buy_price > bid_price > 0:
                         buy_price = bid_price
 
-                    params = self.order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                    params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                        quantity=round_to((self.fund_each / buy_price), self.qty_unit),
                                        price=round_to(buy_price, self.price_unit))
                     new_buy_order_id = self.client.new_order(**params)
@@ -266,7 +249,7 @@ class GridTrading(object):
                             sell_price = ask_price
 
 
-                        params = self.order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                        params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                            quantity=round_to((self.fund_each / sell_price), self.qty_unit),
                                            price=round_to(sell_price, self.price_unit))
                         new_sell_order_id = self.client.new_order(**params)
@@ -293,7 +276,7 @@ class GridTrading(object):
                 else:
                     price = bid_price *(1- self.price_diff)
 
-                params = self.order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                    quantity=round_to((self.fund_each / price), self.qty_unit),
                                    price=round_to(price, self.price_unit))
 
@@ -323,7 +306,7 @@ class GridTrading(object):
                 else:
                     price = ask_price * (1+ self.price_diff)
 
-                params = self.order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                    quantity=round_to((self.fund_each / price), self.qty_unit),
                                    price=round_to(price, self.price_unit))
                 sell_order_id = self.client.new_order(**params)
