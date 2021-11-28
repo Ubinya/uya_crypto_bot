@@ -11,8 +11,15 @@ from decimal import Decimal
 import json
 from binance.error import ClientError
 
+log_format = '%(asctime)s %(message)s'
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+    format=log_format, datefmt='%m/%d %I:%M:%S %p')
+fh = logging.FileHandler('log.txt')
+fh.setFormatter(logging.Formatter(log_format))
+logging.getLogger().addHandler(fh)
 
-def order_str(symbol, side, type, timeInForce, quantity, price):
+
+def order_str_limit(symbol, side, type, timeInForce, quantity, price):
     params = {
         "symbol": symbol,
         "side": side,
@@ -20,6 +27,16 @@ def order_str(symbol, side, type, timeInForce, quantity, price):
         "timeInForce": timeInForce,
         "quantity": quantity,
         "price": price,
+    }
+    return params
+
+def order_str_market(symbol, side, type, timeInForce, quoteOrderQty):
+    params = {
+        "symbol": symbol,
+        "side": side,
+        "type": type,
+        "timeInForce": timeInForce,
+        "quoteOrderQty": quoteOrderQty,
     }
     return params
 

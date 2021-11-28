@@ -13,13 +13,13 @@ from binance.error import ClientError
 from key import *
 from utils import *
 
-
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
     format=log_format, datefmt='%m/%d %I:%M:%S %p')
 fh = logging.FileHandler('log.txt')
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
+
 
 
 def _get_server_time():
@@ -158,7 +158,7 @@ class grid_bot(object):
                         # 防止价格
                         sell_price = ask_price
 
-                    params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                    params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                             quantity=round_to((self.fund_each / sell_price), self.qty_unit),
                                             price=round_to(sell_price, self.price_unit))
 
@@ -182,7 +182,7 @@ class grid_bot(object):
                         if buy_price > bid_price > 0:
                             buy_price = bid_price
 
-                        params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                        params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                            quantity=round_to((self.fund_each / buy_price), self.qty_unit),
                                            price=round_to(buy_price, self.price_unit))
                         new_buy_order_id = self.client.new_order(**params)
@@ -224,7 +224,7 @@ class grid_bot(object):
                     if buy_price > bid_price > 0:
                         buy_price = bid_price
 
-                    params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                    params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                        quantity=round_to((self.fund_each / buy_price), self.qty_unit),
                                        price=round_to(buy_price, self.price_unit))
                     new_buy_order_id = self.client.new_order(**params)
@@ -249,7 +249,7 @@ class grid_bot(object):
                             sell_price = ask_price
 
 
-                        params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                        params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                            quantity=round_to((self.fund_each / sell_price), self.qty_unit),
                                            price=round_to(sell_price, self.price_unit))
                         new_sell_order_id = self.client.new_order(**params)
@@ -276,7 +276,7 @@ class grid_bot(object):
                 else:
                     price = bid_price *(1- self.price_diff)
 
-                params = order_str(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
                                    quantity=round_to((self.fund_each / price), self.qty_unit),
                                    price=round_to(price, self.price_unit))
 
@@ -306,7 +306,7 @@ class grid_bot(object):
                 else:
                     price = ask_price * (1+ self.price_diff)
 
-                params = order_str(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
                                    quantity=round_to((self.fund_each / price), self.qty_unit),
                                    price=round_to(price, self.price_unit))
                 sell_order_id = self.client.new_order(**params)
