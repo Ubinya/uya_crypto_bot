@@ -44,6 +44,16 @@ class balance_bot(object):
 
 
     def do_a_loop(self):
+        self.runtime += 5
+
+        with open((self.symbol+'.json'), 'w') as f:
+            save = {'symbol': self.symbol, 'runtime': self.run_time,
+                    'buy_cnt': self.buy_cnt, 'sell_cnt': self.sell_cnt}
+            json_str = json.dumps(save)
+            f.write(json_str)
+
+        if self.runtime % 300 != 0:
+            return 0
         if self.status != 'running':
             return -1
         res = self.client.funding_wallet(asset=self.asset)
@@ -68,11 +78,9 @@ class balance_bot(object):
             self.buy_cnt += 1
 
 
-
-
     def trade(self, direction, val_d):
         if direction == 'buy':
-            # 麻了oder_str要重写一下
+
             params = order_str_market(self.symbol, side='BUY', type='MARKET', timeInForce='GTC',
                                     quoteOrderQty=round_to(val_d, self.qty_unit))
         elif direction == 'sell':
