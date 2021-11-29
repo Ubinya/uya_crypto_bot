@@ -29,13 +29,13 @@ def gen_bot_str(bot):
     if bot.get('type') == 'grid':
         outstr = '分姬类型:网格 '
         outstr += '交易对: {}<br>'.format(info['symbol'])
-        outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['runtime']))
+        outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['run_time']))
         outstr += '套利次数: {}<br>'.format(info['txn'])
         outstr += '累计收益: {}<br><br>'.format(round(info['earned'], 4))
     elif bot.get('type') == 'balance':
         outstr = '分姬类型:自动平衡 '.format()
         outstr += '交易对: {}<br>'.format(info['symbol'])
-        outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['runtime']))
+        outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['run_time']))
         outstr += '平衡次数: 多: {}'.format(info['buy_cnt'])
         outstr += ' 空: {}<br><br>'.format(info['sell_cnt'])
 

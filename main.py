@@ -30,7 +30,7 @@ def _get_server_time():
 
 class BotManager(object):
     def __init__(self):
-        logging.info('自动交易姬准备开始本次调试')
+        logging.info('给狗修金大人请安~这里是量化姬,准备开始本次调教(调试)了!!')
         self.bot_list = []
         self.client = Client(key, secret, base_url=url)
 
@@ -61,8 +61,8 @@ class BotManager(object):
 if __name__ == '__main__':
     bot_manager = BotManager()
     # 交易对，价差模式：等差/等比，价差数额，最大订单数，每格金额
-    # bot_manager.add_grid_bot(symbol='BNBBUSD', price_mode='geometric', price_diff=10, max_order=40, fund_each=20)
-    bot_manager.add_balance_bot(asset='AVAX', symbol='AVAXBUSD', multiple=.6, diff=11)
+    bot_manager.add_grid_bot(symbol='BNBBUSD', price_mode='geometric', price_diff=0.01, max_order=40, fund_each=20)
+    bot_manager.add_balance_bot(asset='AVAX', symbol='AVAXBUSD', multiple=0.6, diff=11)
 
     bot_manager.run_init()
     last_err_time = 0.0

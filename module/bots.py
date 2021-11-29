@@ -27,7 +27,7 @@ class balance_bot(object):
         self.status = 'running'
         self.asset = asset
         self.symbol = symbol
-        self.runtime = 0
+        self.run_time = 0
         self.val = 0
         self.base = 0 # balanced stable asset
         self.multiple = multiple
@@ -42,18 +42,30 @@ class balance_bot(object):
         self.price_unit = float(items[0]['filters'][0]['tickSize'])
         self.qty_unit = float(items[0]['filters'][2]['stepSize'])
 
+        res = self.client.account()
+        balance_list = res.get('balances', -1)
+        for item in balance_list:
+            if item.get('asset') == self.asset:
+                cur_qty = float(item.get('free'))
+                break
+        cur_price = float(self.client.ticker_price(self.symbol)['price'])
+        cur_val = cur_qty * cur_price
+        logging.info(f"{self.asset} 平衡姬开单成功, 当前价值: {round(cur_val, 3)}, 仓位比: {self.multiple}, 阈值: {self.diff}")
+
 
     def do_a_loop(self):
-        self.runtime += 5
+        self.run_time += 20
 
         with open((self.symbol+'.json'), 'w') as f:
-            save = {'symbol': self.symbol, 'runtime': self.run_time,
+            save = {'symbol': self.symbol, 'run_time': self.run_time,
                     'buy_cnt': self.buy_cnt, 'sell_cnt': self.sell_cnt}
             json_str = json.dumps(save)
             f.write(json_str)
 
-        if self.runtime % 300 != 0:
+        if self.run_time % 300 != 0:
             return 0
+        if self.run_time % 3600 == 0:
+            logging.info(f"{self.asset} 平衡姬正常运行中, 多次: {self.buy_cnt}, 空次: {self.sell_cnt}")
         if self.status != 'running':
             return -1
         res = self.client.funding_wallet(asset=self.asset)
@@ -153,7 +165,7 @@ class grid_bot(object):
                 self.symbol, self.run_time, round(price_cur, 3)))
 
         with open((self.symbol+'.json'), 'w') as f:
-            save = {'symbol': self.symbol, 'runtime': self.run_time,
+            save = {'symbol': self.symbol, 'run_time': self.run_time,
                     'txn': self.txn_count, 'earned': self.earned}
             json_str = json.dumps(save)
             f.write(json_str)
