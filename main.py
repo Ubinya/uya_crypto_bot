@@ -21,8 +21,6 @@ fh = logging.FileHandler('log.txt')
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
-
-
 def _get_server_time():
     return int(time.time())
 

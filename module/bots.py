@@ -14,13 +14,6 @@ from binance.error import ClientError
 from key import *
 from utils import *
 
-log_format = '%(asctime)s %(message)s'
-logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-    format=log_format, datefmt='%m/%d %I:%M:%S %p')
-fh = logging.FileHandler('log.txt')
-fh.setFormatter(logging.Formatter(log_format))
-logging.getLogger().addHandler(fh)
-
 
 class balance_bot(object):
     def __init__(self, client, asset, symbol, multiple, diff):
@@ -28,7 +21,7 @@ class balance_bot(object):
         self.asset = asset
         self.symbol = symbol
         self.run_time = 0
-        self.val = 0
+        self.qty = 0
         self.base = 0 # balanced stable asset
         self.multiple = multiple
         self.diff = diff
@@ -46,10 +39,10 @@ class balance_bot(object):
         balance_list = res.get('balances', -1)
         for item in balance_list:
             if item.get('asset') == self.asset:
-                cur_qty = float(item.get('free'))
+                self.qty = round_to(float(item.get('free')), self.qty_unit)
                 break
         cur_price = float(self.client.ticker_price(self.symbol)['price'])
-        cur_val = cur_qty * cur_price
+        cur_val = self.qty * cur_price
         logging.info(f"{self.asset} 平衡姬开单成功, 当前价值: {round(cur_val, 3)}, 仓位比: {self.multiple}, 阈值: {self.diff}")
 
 
@@ -68,36 +61,34 @@ class balance_bot(object):
             logging.info(f"{self.asset} 平衡姬正常运行中, 多次: {self.buy_cnt}, 空次: {self.sell_cnt}")
         if self.status != 'running':
             return -1
-        res = self.client.funding_wallet(asset=self.asset)
-        cur_qty = float(res[0].get('free', -1))
         cur_price = float(self.client.ticker_price(self.symbol)['price'])
-        cur_val = cur_qty * cur_price
+        cur_val = self.qty * cur_price
         val_to_d = (1.0 - self.multiple)* cur_val - self.multiple * self.base
         if abs(val_to_d) > 3.0*self.diff:
-            logging.info("平衡姬 "+self.asset+" 出现待平衡值过大 已暂停!")
+            logging.info("平衡姬 "+self.asset+" 待平衡值过大 已暂停!")
             self.status = 'pause'
         if val_to_d > self.diff:
+            logging.info(f'val={cur_val} 需要卖出{val_to_d}')
             res = self.trade('sell', val_to_d)
-            if res:
-                self.val = cur_val - val_to_d
-                self.base += val_to_d
+            self.qty -= round_to(float(res.get('executedQty')), self.qty_unit)
+            self.base += round_to(float(res.get('cummulativeQuoteQty')), self.price_unit)
             self.sell_cnt += 1
         elif val_to_d < -self.diff:
-            self.trade('buy', val_to_d)
-            if res:
-                self.val = cur_val + val_to_d
-                self.base -= val_to_d
+            logging.info(f'val={cur_val} 需要卖出{val_to_d}')
+            res = self.trade('buy', val_to_d)
+            self.qty += round_to(float(res.get('executedQty')), self.qty_unit)
+            self.base -= round_to(float(res.get('cummulativeQuoteQty')), self.price_unit)
             self.buy_cnt += 1
 
 
     def trade(self, direction, val_d):
         if direction == 'buy':
 
-            params = order_str_market(self.symbol, side='BUY', type='MARKET', timeInForce='GTC',
-                                    quoteOrderQty=round_to(val_d, self.qty_unit))
+            params = order_str_market(self.symbol, side='BUY', type='MARKET',
+                                    quoteOrderQty=round_to(val_d, self.price_unit))
         elif direction == 'sell':
-            params = order_str_market(self.symbol, side='SELL', type='MARKET', timeInForce='GTC',
-                                    quoteOrderQty=round_to(val_d, self.qty_unit))
+            params = order_str_market(self.symbol, side='SELL', type='MARKET',
+                                    quoteOrderQty=round_to(val_d, self.price_unit))
         else:
             return False
 
