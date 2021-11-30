@@ -27,13 +27,13 @@ def gen_bot_str(bot):
     with open((bot.get('symbol') + '.json'), 'r') as f:
         info = json.load(f)
     if bot.get('type') == 'grid':
-        outstr = '分姬类型:网格 '
+        outstr = '分姬类型: 网格 '
         outstr += '交易对: {}<br>'.format(info['symbol'])
         outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['run_time']))
         outstr += '套利次数: {}<br>'.format(info['txn'])
         outstr += '累计收益: {}<br><br>'.format(round(info['earned'], 4))
-    elif bot.get('type') == 'balance':
-        outstr = '分姬类型:自动平衡 '.format()
+    elif bot.get('type') == 'balancer':
+        outstr = '分姬类型: 自动平衡 '.format()
         outstr += '交易对: {}<br>'.format(info['symbol'])
         outstr += '运行时间: {}<br>'.format(seconds_to_dhms(info['run_time']))
         outstr += '平衡次数: 多: {}'.format(info['buy_cnt'])
@@ -44,15 +44,21 @@ def gen_bot_str(bot):
 
 @app.route("/bot")
 def status():
-    bots = [{
+    '''bots = [{
              'type':'grid',
              'symbol':'BNBBUSD'
             },
             {
-             'type':'balance',
+             'type':'balancer',
              'asset':'AVAX',
              'symbol':'AVAXBUSD'
-            }]
+            }]'''
+    bots = [
+        {
+            'type': 'balancer',
+            'asset': 'AVAX',
+            'symbol': 'AVAXBUSD'
+        }]
     with open('BotManager.json', 'r') as f0:
         info0 = json.load(f0)
     #outstr = '<link rel = "shortcut icon" href = "#" / >'
@@ -68,7 +74,7 @@ def status():
     outstr += '<meta charset="UTF-8"><title>御鸦鸦的云交易姬</title>'
     outstr += '<img src="https://ubi-img-bed.oss-cn-shanghai.aliyuncs.com/bot_app_running.png" height="75" width="75"/><br>'
     outstr += '数据更新时间: {}<br>'.format(info0['time'])
-    outstr += '当前分姬数: {}<br>'.format(len(bots))
+    outstr += '当前分姬数: {}<br><br>'.format(len(bots))
     for bot in bots:
         outstr += gen_bot_str(bot)
 
