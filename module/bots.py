@@ -43,6 +43,7 @@ class balance_bot(object):
                 break
         cur_price = float(self.client.ticker_price(self.symbol)['price'])
         cur_val = self.qty * cur_price
+        self.base = cur_val / (self.multiple) * (1.0 - self.multiple)
         logging.info(f"{self.asset} 平衡姬开单成功, 当前价值: {round(cur_val, 3)}, 仓位比: {self.multiple}, 阈值: {self.diff}")
 
 
@@ -63,7 +64,7 @@ class balance_bot(object):
             return -1
         cur_price = float(self.client.ticker_price(self.symbol)['price'])
         cur_val = self.qty * cur_price
-        val_to_d = (1.0 - self.multiple)* cur_val - self.multiple * self.base
+        val_to_d = (1.0 - self.multiple) * cur_val - self.multiple * self.base
         if abs(val_to_d) > 3.0*self.diff:
             logging.info("平衡姬 "+self.asset+" 待平衡值过大 已暂停!")
             self.status = 'pause'
