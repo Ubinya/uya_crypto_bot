@@ -5,13 +5,16 @@ A simple crypto trading bot using Binance API and python.
 Really Unstable!!! Just for API sample and reference.
 完善度非常低,仅供参考（
 
+A bot strategy simulator is under development.
+新功能bot模拟工具正在开发中
 # Current available trading mode 目前支持的交易模式
-Grid bot
+Grid bot 网格
 
-Auto balance(developing)
+Auto balancer(developing) 自动平衡(开发中)
 
 # Instruction 用法说明
 (Under Linux)
+使用Linux系统，推荐ubuntu
 
 Set the api-key and secret-key in file key.py
 在key.py中设置api密钥
