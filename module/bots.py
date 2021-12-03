@@ -144,8 +144,16 @@ class grid_bot(object):
 
         return bid_price, ask_price
 
-    def make_limit_order(self, direction, ):
-
+    def make_limit_order(self, symbol, side, fund, price):
+        if side == 'SELL':
+            params = order_str_limit(symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                                     quantity=round_to((fund / price), self.qty_unit),
+                                     price=round_to(price, self.price_unit))
+        else:
+            params = order_str_limit(symbol, side='BUY', type='LIMIT', timeInForce='GTC',
+                                     quantity=round_to((fund / price), self.qty_unit),
+                                     price=round_to(price, self.price_unit))
+        return self.client.new_order(**params)
 
     def do_a_loop(self):
         self.run_time += 20
@@ -200,15 +208,8 @@ class grid_bot(object):
                     else:
                         sell_price = order_price * (1 + self.price_diff)
 
-                    if 0 < sell_price < ask_price:
-                        # 防止价格
-                        sell_price = ask_price
-
-                    params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
-                                            quantity=round_to((self.fund_each / sell_price), self.qty_unit),
-                                            price=round_to(sell_price, self.price_unit))
-
-                    new_sell_order_id = self.client.new_order(**params)
+                    new_sell_order_id = self.make_limit_order(self.symbol,
+                                                              side='SELL', fund=self.fund_each, price=sell_price)
 
                     logging.info(f'{self.symbol}买单成交！挂卖单,价格:{round(sell_price, 3)}')
 
@@ -225,13 +226,9 @@ class grid_bot(object):
                             buy_price = order_price - self.price_diff
                         else:
                             buy_price = order_price * (1 - self.price_diff)
-                        if buy_price > bid_price > 0:
-                            buy_price = bid_price
 
-                        params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
-                                           quantity=round_to((self.fund_each / buy_price), self.qty_unit),
-                                           price=round_to(buy_price, self.price_unit))
-                        new_buy_order_id = self.client.new_order(**params)
+                        new_buy_order_id = self.make_limit_order(self.symbol,
+                                                              side='BUY', fund=self.fund_each, price=buy_price)
 
                         logging.info(f'{self.symbol}最低买单成交！挂新最低买单,价格:{round(buy_price, 3)}')
                         self.order_min_price = buy_price
@@ -269,13 +266,9 @@ class grid_bot(object):
                         buy_price = order_price - self.price_diff
                     else:
                         buy_price = order_price *(1- self.price_diff)
-                    if buy_price > bid_price > 0:
-                        buy_price = bid_price
 
-                    params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
-                                       quantity=round_to((self.fund_each / buy_price), self.qty_unit),
-                                       price=round_to(buy_price, self.price_unit))
-                    new_buy_order_id = self.client.new_order(**params)
+                    new_buy_order_id = self.make_limit_order(self.symbol,
+                                                              side='BUY', fund=self.fund_each, price=buy_price)
 
                     logging.info(f'{self.symbol}卖单成交！挂买单,价格:{round(buy_price, 3)}')
 
@@ -293,10 +286,8 @@ class grid_bot(object):
                             else:
                                 sell_price = order_price * (1 + self.price_diff)
 
-                            params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
-                                                     quantity=round_to((self.fund_each / sell_price), self.qty_unit),
-                                                     price=round_to(sell_price, self.price_unit))
-                            new_sell_order_id = self.client.new_order(**params)
+                            new_sell_order_id = self.make_limit_order(self.symbol,
+                                                              side='SELL', fund=self.fund_each, price=sell_price)
 
                             logging.info(f'{self.symbol}最高卖单成交！挂新最高卖单,价格:{round(sell_price, 3)}')
                             self.order_max_price = sell_price
@@ -319,22 +310,19 @@ class grid_bot(object):
 
             if bid_price > 0:
                 if (self.price_mode == 'arithmetic'):
-                    price = bid_price - self.price_diff
+                    buy_price = bid_price - self.price_diff
                 else:
-                    price = bid_price *(1- self.price_diff)
+                    buy_price = bid_price *(1- self.price_diff)
 
-                params = order_str_limit(self.symbol, side='BUY', type='LIMIT', timeInForce='GTC',
-                                   quantity=round_to((self.fund_each / price), self.qty_unit),
-                                   price=round_to(price, self.price_unit))
+                buy_order_id = self.make_limit_order(self.symbol,
+                                                    side='BUY', fund=self.fund_each, price=buy_price)
 
-                buy_order_id = self.client.new_order(**params)
-
-                self.order_min_price = price
+                self.order_min_price = buy_price
                 if buy_order_id:
                     # 注意转换
-                    buy_order = {'order_id': buy_order_id['orderId'], 'price': price}
+                    buy_order = {'order_id': buy_order_id['orderId'], 'price': buy_price}
                     self.buy_orders.append(buy_order)
-                    logging.info(f'{self.symbol}没有买单！挂一个！价格：{round_to(price, self.price_unit)}')
+                    logging.info(f'{self.symbol}没有买单！挂一个！价格：{round_to(buy_price, self.price_unit)}')
 
         elif len(self.buy_orders) > int(self.max_order):  # 最多允许的挂单数量.
             # 订单数量比较多的时候.
@@ -349,21 +337,19 @@ class grid_bot(object):
         if len(self.sell_orders) <= 0:
             if ask_price > 0:
                 if (self.price_mode == 'arithmetic'):
-                    price = ask_price + self.price_diff
+                    sell_price = ask_price + self.price_diff
                 else:
-                    price = ask_price * (1+ self.price_diff)
+                    sell_price = ask_price * (1+ self.price_diff)
 
-                params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
-                                   quantity=round_to((self.fund_each / price), self.qty_unit),
-                                   price=round_to(price, self.price_unit))
-                sell_order_id = self.client.new_order(**params)
+                sell_order_id = self.make_limit_order(self.symbol,
+                                                    side='SELL', fund=self.fund_each, price=sell_price)
 
-                self.order_max_price = price
+                self.order_max_price = sell_price
                 if sell_order_id:
                     # 注意转换
-                    sell_order = {'order_id': sell_order_id['orderId'], 'price': price}
+                    sell_order = {'order_id': sell_order_id['orderId'], 'price': sell_price}
                     self.sell_orders.append(sell_order)
-                    logging.info(f'{self.symbol}没有卖单！挂一个！价格：{round_to(price, self.price_unit)}')
+                    logging.info(f'{self.symbol}没有卖单！挂一个！价格：{round_to(sell_price, self.price_unit)}')
 
         elif len(self.sell_orders) > int(self.max_order):  # 最多允许的挂单数量.
             # 订单数量比较多的时候.

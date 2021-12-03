@@ -44,21 +44,20 @@ def gen_bot_str(bot):
 
 @app.route("/bot")
 def status():
-    '''bots = [{
+    bots = [{
              'type':'grid',
              'symbol':'BNBBUSD'
             },
             {
-             'type':'balancer',
-             'asset':'AVAX',
+             'type':'grid',
              'symbol':'AVAXBUSD'
-            }]'''
-    bots = [
+            }]
+    '''bots = [
         {
             'type': 'balancer',
             'asset': 'AVAX',
             'symbol': 'AVAXBUSD'
-        }]
+        }]'''
     with open('BotManager.json', 'r') as f0:
         info0 = json.load(f0)
     #outstr = '<link rel = "shortcut icon" href = "#" / >'

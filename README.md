@@ -1,14 +1,18 @@
 # uya_crypto_bot
 A simple crypto trading bot using Binance API and python.
-一个简单的使用币安API的python加密货币交易机器人
+一个简单的使用币安API和python加密货币交易机器人
 
 Really Unstable!!! Just for API sample and reference.
 完善度非常低,仅供参考（
 
-A bot strategy simulator is under development.
-新功能bot模拟工具正在开发中
+A bot strategy simulator lie over.
+bot模拟工具暂时搁置
+
+Calculator tool under development.
+辅助计算工具开发中
+
 # Current available trading mode 目前支持的交易模式
-Grid bot 网格
+Coin-standard grid bot 币本位网格
 
 Auto balancer(developing) 自动平衡(开发中)
 
