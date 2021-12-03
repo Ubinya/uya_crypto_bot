@@ -96,7 +96,7 @@ class balance_bot(object):
         return self.client.new_order(**params)
 
 class grid_bot(object):
-    def __init__(self, client, symbol, price_mode, price_diff,max_order, fund_each=-1):
+    def __init__(self, client, symbol, price_mode, price_diff, max_order, fund_each=-1):
         self.client = client
         self.txn_count = 0
         self.run_time = 0
@@ -108,6 +108,7 @@ class grid_bot(object):
         self.max_order = max_order
         self.price_mode = price_mode
         self.price_diff = price_diff
+        self.sell_trigger = 0 # max trigger num is 3
 
         self.order_max_price = 0.0
         self.order_min_price = 9999999.0
@@ -143,7 +144,7 @@ class grid_bot(object):
 
         return bid_price, ask_price
 
-
+    def make_limit_order(self, direction, ):
 
 
     def do_a_loop(self):
@@ -166,7 +167,7 @@ class grid_bot(object):
         # print(f"bid_price: {bid_price}, ask_price: {ask_price}")
 
         self.buy_orders.sort(key=lambda x: float(x['price']), reverse=True)  # 最高价到最低价.
-        self.sell_orders.sort(key=lambda x: float(x['price']), reverse=True)  # 最高价到最低价.
+        self.sell_orders.sort(key=lambda x: float(x['price']), reverse=False)  # 最低价到最高价.
         # print(f"buy orders: {self.buy_orders}")
         # print("------------------------------")
         # print(f"sell orders: {self.sell_orders}")
@@ -186,7 +187,10 @@ class grid_bot(object):
                 if check_order['status'] == 'CANCELED':
                     buy_delete_orders.append(buy_order)
                     # print(f"buy order status was canceled: {check_order.get('status')}")
+                elif check_order['status'] == 'NEW': # 不记得这是不是‘NEW’
+                    break
                 elif check_order['status'] == 'FILLED':
+                    self.sell_trigger += 1
                     logging.info(
                         f"{self.symbol}买单成交,价格:{round(order_price, 3)}")
                     # logging.info(f"当前未成买单个数:{len(self.buy_orders)-1}")
@@ -251,6 +255,8 @@ class grid_bot(object):
                 if check_order['status'] == 'CANCELED':
                     sell_delete_orders.append(sell_order)
                     # print(f"sell order status was canceled: {check_order.get('status')}")
+                elif check_order['status'] == 'NEW':  # 不记得这是不是‘NEW’
+                    break
                 elif check_order['status'] == 'FILLED':
                     self.txn_count += 1
                     self.earned += (self.fund_each / (order_price)) - (self.fund_each / (order_price + self.price_diff))
@@ -279,30 +285,29 @@ class grid_bot(object):
                         sell_delete_orders.append(sell_order)
                         self.buy_orders.append(new_buy_order)
 
-                    # 最高卖单成交后在上方再挂卖单
-                    if order_price >= self.order_max_price:
-                        if (self.price_mode == 'arithmetic'):
-                            sell_price = order_price + self.price_diff
-                        else:
-                            sell_price = order_price *(1+ self.price_diff)
+                    if self.sell_trigger < 4 :
+                        # 最高卖单成交后在上方再挂卖单
+                        if order_price >= self.order_max_price:
+                            if (self.price_mode == 'arithmetic'):
+                                sell_price = order_price + self.price_diff
+                            else:
+                                sell_price = order_price * (1 + self.price_diff)
 
-                        if 0 < sell_price < ask_price:
-                            # 防止价格
-                            sell_price = ask_price
+                            params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
+                                                     quantity=round_to((self.fund_each / sell_price), self.qty_unit),
+                                                     price=round_to(sell_price, self.price_unit))
+                            new_sell_order_id = self.client.new_order(**params)
 
+                            logging.info(f'{self.symbol}最高卖单成交！挂新最高卖单,价格:{round(sell_price, 3)}')
+                            self.order_max_price = sell_price
 
-                        params = order_str_limit(self.symbol, side='SELL', type='LIMIT', timeInForce='GTC',
-                                           quantity=round_to((self.fund_each / sell_price), self.qty_unit),
-                                           price=round_to(sell_price, self.price_unit))
-                        new_sell_order_id = self.client.new_order(**params)
+                            if new_sell_order_id:
+                                # 注意转换
+                                new_sell_order = {'order_id': new_sell_order_id['orderId'], 'price': sell_price}
+                                self.sell_orders.append(new_sell_order)
+                    else:
+                        logging.info("警告！已经连卖3格, 已经暂停新单")
 
-                        logging.info(f'{self.symbol}最高卖单成交！挂新最高卖单,价格:{round(sell_price, 3)}')
-                        self.order_max_price = sell_price
-
-                        if new_sell_order_id:
-                            # 注意转换
-                            new_sell_order = {'order_id': new_sell_order_id['orderId'], 'price': sell_price}
-                            self.sell_orders.append(new_sell_order)
 
 
         # 过期或者拒绝的订单删除掉.
