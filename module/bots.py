@@ -256,7 +256,12 @@ class grid_bot(object):
                     break
                 elif check_order['status'] == 'FILLED':
                     self.txn_count += 1
-                    self.earned += (self.fund_each / (order_price)) - (self.fund_each / (order_price + self.price_diff))
+                    if self.price_mode == 'arithmetic':
+                        self.earned += (self.fund_each / order_price) - (
+                                self.fund_each / (order_price + self.price_diff))
+                    else:
+                        self.earned += (self.fund_each / order_price) - (
+                                    self.fund_each / (order_price * (1 + self.price_diff)))
                     logging.info(
                         f"{self.symbol}卖单成交,价格:{round(order_price, 3)},"
                         f"累计收益：{round(self.earned, 3)}")
@@ -278,7 +283,8 @@ class grid_bot(object):
                         sell_delete_orders.append(sell_order)
                         self.buy_orders.append(new_buy_order)
 
-                    if self.sell_trigger < 4 :
+                    #if self.sell_trigger < 4 :
+                    if True:
                         # 最高卖单成交后在上方再挂卖单
                         if order_price >= self.order_max_price:
                             if (self.price_mode == 'arithmetic'):

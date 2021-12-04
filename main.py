@@ -61,6 +61,7 @@ if __name__ == '__main__':
     # 交易对，价差模式：等差/等比，价差数额，最大订单数，每格金额
     bot_manager.add_grid_bot(symbol='BNBBUSD', price_mode='geometric', price_diff=0.015, max_order=20, fund_each=20)
     bot_manager.add_grid_bot(symbol='AVAXBUSD', price_mode='geometric', price_diff=0.04, max_order=20, fund_each=20)
+    # bot_manager.add_grid_bot(symbol='GTCBUSD', price_mode='geometric', price_diff=0.055, max_order=20, fund_each=20)
 
     bot_manager.run_init()
     last_err_time = 0.0

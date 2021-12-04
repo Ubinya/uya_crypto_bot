@@ -79,9 +79,9 @@ class ToolGui(object):
 
 
 if __name__ == '__main__':
-    t1 = GridCalculator(22)
-    t1.set_profit(0.001)
-    t1.set_p0(610)
+    t1 = GridCalculator(20)
+    t1.set_profit(0.1)
+    t1.set_p0(100)
     print(t1.get_diff())
     exit(0)
 
