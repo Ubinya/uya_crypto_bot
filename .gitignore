@@ -128,3 +128,4 @@ dmypy.json
 
 #my ide file
 .idea/*
+helpers/simulator/market_sim/*.json
